@@ -1,39 +1,79 @@
 const express = require('express');
 const router = express.Router();
+const connectToDatabase = require('../utils/conn.js');
 
-/// GET /shipmentTracking
-router.get('/shipmentTracking', (req, res) => {
-    // Retrieve tracking details of a shipment
+router.get("/shipmentTracking", async (req, res) => {
+  try {
+    const collection = await connectToDatabase();
+    const results = await collection.find({}).toArray();
+    res.send(results).status(200);
+  } catch (error) {
+    console.error('Failed to retrieve shipments:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+// Define the /shipmentTracking/:id route for retrieving a single shipment
+router.get("/shipmentTracking/:id", async (req, res) => {
+  const shipmentId = req.params.id;
+  
+  try {
+    const collection = await connectToDatabase();
+    const result = await collection.findOne({ id: shipmentId });
     
-    //const { customerId, fields, orderId, page, query, size, sort, status } = req.query;
-  
-    // Perform necessary operations to retrieve tracking details
-    // ...
-  
-    // Return the response
-    res.json({
-      // Response data
-    });
-  });
-
-// Define a POST route
-router.post('/api/users', (req, res) => {
-  // Handle the request and send a response
-  res.send('POST /api/users route');
+    if (result) {
+      res.send(result).status(200);
+    } else {
+      res.status(404).send('Shipment not found');
+    }
+  } catch (error) {
+    console.error('Failed to retrieve shipment:', error);
+    res.status(500).send('Internal Server Error');
+  }
 });
 
-// Define a PUT route
-router.put('/api/users/:id', (req, res) => {
-  const userId = req.params.id;
-  // Handle the request and send a response
-  res.send(`PUT /api/users/${userId} route`);
+
+// Define the /shipmentTracking/:id route for updating a shipment
+router.put("/shipmentTracking/:id", async (req, res) => {
+  const shipmentId = req.params.id;
+  const updatedData = req.body; // Assuming you pass the updated data in the request body
+  
+  try {
+    const collection = await connectToDatabase();
+    const result = await collection.updateOne({ _id: shipmentId }, { $set: updatedData });
+    res.sendStatus(200);
+  } catch (error) {
+    console.error('Failed to update shipment:', error);
+    res.status(500).send('Internal Server Error');
+  }
 });
 
-// Define a DELETE route
-router.delete('/api/users/:id', (req, res) => {
-  const userId = req.params.id;
-  // Handle the request and send a response
-  res.send(`DELETE /api/users/${userId} route`);
+// Define the /shipmentTracking route for creating a new shipment
+router.post("/shipmentTracking", async (req, res) => {
+  const newShipment = req.body; // Assuming you pass the new shipment data in the request body
+  
+  try {
+    const collection = await connectToDatabase();
+    const result = await collection.insertOne(newShipment);
+    res.sendStatus(201);
+  } catch (error) {
+    console.error('Failed to create new shipment:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+// Define the /shipmentTracking/:id route for deleting a shipment
+router.delete("/shipmentTracking/:id", async (req, res) => {
+  const shipmentId = req.params.id;
+  
+  try {
+    const collection = await connectToDatabase();
+    const result = await collection.deleteOne({ _id: shipmentId });
+    res.sendStatus(204);
+  } catch (error) {
+    console.error('Failed to delete shipment:', error);
+    res.status(500).send('Internal Server Error');
+  }
 });
 
 module.exports = router;

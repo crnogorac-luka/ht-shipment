@@ -1,25 +1,30 @@
-const express = require('express');
-const { connectToDatabase, closeDatabaseConnection, populateShipments } = require('./utils/database');
+const express = require("express");
+const cors = require("cors");
+// get MongoDB driver connection
+const dbo = require("./utils/conn");
 
+const PORT = 5000;
 const app = express();
 
-// Connect to the database and populate the shipments
-connectToDatabase()
-  .then(() => populateShipments())
-  .catch((error) => {
-    console.error('Failed to initialize the database:', error);
-    process.exit(1);
-  });
+app.use(cors());
+app.use(express.json());
+app.use(require("./routes/routes"));
 
-// Your routes and other server setup code here
-
-// Close the database connection when the server is shut down
-process.on('SIGINT', () => {
-  closeDatabaseConnection();
-  process.exit();
+// Global error handling
+app.use(function (err, _req, res) {
+  console.error(err.stack);
+  res.status(500).send('Something broke!');
 });
 
-// Start the server
-app.listen(3000, () => {
-  console.log('Server is running on port 3000');
+// perform a database connection when the server starts
+dbo.connectToServer(function (err) {
+  if (err) {
+    console.error(err);
+    process.exit();
+  }
+
+  // start the Express server
+  app.listen(PORT, () => {
+    console.log(`Server is running on port: ${PORT}`);
+  });
 });
